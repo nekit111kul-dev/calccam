@@ -236,8 +236,9 @@
             padding-left: 0;
             justify-content: center;
             background: #000;
-            border: 2px solid #ef4444;
-            box-shadow: 0 0 20px rgba(239, 68, 68, 0.5);
+            /* Убрали красную рамку и свечение */
+            border: none; 
+            box-shadow: none;
         }
 
         .btn-zero.camera-active .camera-preview {
@@ -272,26 +273,6 @@
         @keyframes pulse {
             0%, 100% { box-shadow: 0 4px 16px rgba(239, 68, 68, 0.5); }
             50% { box-shadow: 0 4px 24px rgba(239, 68, 68, 0.9); }
-        }
-
-        /* Вспышка при снимке */
-        .flash {
-            position: absolute;
-            inset: 0;
-            background: #fff;
-            opacity: 0;
-            pointer-events: none;
-            z-index: 200;
-            border-radius: 36px;
-        }
-
-        .flash.active {
-            animation: flashAnim 0.3s ease-out;
-        }
-
-        @keyframes flashAnim {
-            0% { opacity: 1; }
-            100% { opacity: 0; }
         }
 
         /* Декоративные градиентные пятна */
@@ -330,7 +311,6 @@
     <div class="calculator" id="calculator">
         <div class="glow glow-1"></div>
         <div class="glow glow-2"></div>
-        <div class="flash" id="flash"></div>
 
         <div class="top-bar">
             <span class="brand" id="brand">Calculator</span>
@@ -345,32 +325,33 @@
         </div>
 
         <div class="keypad">
-            <button class="btn btn-func" onclick="clearAll()">AC</button>
-            <button class="btn btn-func" onclick="toggleSign()">+/−</button>
-            <button class="btn btn-func" onclick="inputPercent()">%</button>
-            <button class="btn btn-accent" id="btnDivide" data-op="/" onclick="inputOperator('/')">÷</button>
+            <!-- Добавил вызов функции haptic() на каждое нажатие -->
+            <button class="btn btn-func" onclick="haptic(); clearAll()">AC</button>
+            <button class="btn btn-func" onclick="haptic(); toggleSign()">+/−</button>
+            <button class="btn btn-func" onclick="haptic(); inputPercent()">%</button>
+            <button class="btn btn-accent" id="btnDivide" data-op="/" onclick="haptic(); inputOperator('/')">÷</button>
 
-            <button class="btn btn-dark" onclick="inputNumber('7')">7</button>
-            <button class="btn btn-dark" onclick="inputNumber('8')">8</button>
-            <button class="btn btn-dark" onclick="inputNumber('9')">9</button>
-            <button class="btn btn-accent" data-op="*" onclick="inputOperator('*')">×</button>
+            <button class="btn btn-dark" onclick="haptic(); inputNumber('7')">7</button>
+            <button class="btn btn-dark" onclick="haptic(); inputNumber('8')">8</button>
+            <button class="btn btn-dark" onclick="haptic(); inputNumber('9')">9</button>
+            <button class="btn btn-accent" data-op="*" onclick="haptic(); inputOperator('*')">×</button>
 
-            <button class="btn btn-dark" onclick="inputNumber('4')">4</button>
-            <button class="btn btn-dark" onclick="inputNumber('5')">5</button>
-            <button class="btn btn-dark" onclick="inputNumber('6')">6</button>
-            <button class="btn btn-accent" data-op="-" onclick="inputOperator('-')">−</button>
+            <button class="btn btn-dark" onclick="haptic(); inputNumber('4')">4</button>
+            <button class="btn btn-dark" onclick="haptic(); inputNumber('5')">5</button>
+            <button class="btn btn-dark" onclick="haptic(); inputNumber('6')">6</button>
+            <button class="btn btn-accent" data-op="-" onclick="haptic(); inputOperator('-')">−</button>
 
-            <button class="btn btn-dark" onclick="inputNumber('1')">1</button>
-            <button class="btn btn-dark" onclick="inputNumber('2')">2</button>
-            <button class="btn btn-dark" onclick="inputNumber('3')">3</button>
-            <button class="btn btn-accent" data-op="+" onclick="inputOperator('+')">+</button>
+            <button class="btn btn-dark" onclick="haptic(); inputNumber('1')">1</button>
+            <button class="btn btn-dark" onclick="haptic(); inputNumber('2')">2</button>
+            <button class="btn btn-dark" onclick="haptic(); inputNumber('3')">3</button>
+            <button class="btn btn-accent" data-op="+" onclick="haptic(); inputOperator('+')">+</button>
 
-            <button class="btn btn-dark btn-zero" id="btnZero" onclick="inputNumber('0')">
+            <button class="btn btn-dark btn-zero" id="btnZero" onclick="haptic(); inputNumber('0')">
                 <span class="zero-text">0</span>
                 <video class="camera-preview" id="cameraPreview" autoplay playsinline muted></video>
             </button>
-            <button class="btn btn-dark" onclick="inputNumber(',')">,</button>
-            <button class="btn btn-accent btn-equals" onclick="calculate()">=</button>
+            <button class="btn btn-dark" onclick="haptic(); inputNumber(',')">,</button>
+            <button class="btn btn-accent btn-equals" onclick="haptic(); calculate()">=</button>
         </div>
     </div>
 
@@ -384,7 +365,6 @@
         let isCameraActive = false;
         let videoStream = null;
 
-        // Секретный код: 1-4-7-8-9-6-3 (рисуем букву "П")
         const SECRET_CODE = '1478963';
         let inputSequence = '';
 
@@ -396,7 +376,13 @@
         const btnZero = document.getElementById('btnZero');
         const btnDivide = document.getElementById('btnDivide');
         const cameraPreview = document.getElementById('cameraPreview');
-        const flashEl = document.getElementById('flash');
+
+        // --- ТАКТИЛЬНЫЙ ОТКЛИК ---
+        function haptic() {
+            if (navigator.vibrate) {
+                navigator.vibrate(10); // Короткий тык
+            }
+        }
 
         function formatNum(str) {
             return str.replace('.', ',');
@@ -428,15 +414,12 @@
         function inputNumber(num) {
             if (isCameraActive) return;
 
-            // Отслеживаем последовательность для секретного кода
-            // Секретка работает только если нажатия идут подряд без операторов
             if (operator === null && !shouldResetScreen) {
                 inputSequence += num;
             } else {
-                inputSequence = num; // Сбрасываем, если начали новое число
+                inputSequence = num;
             }
 
-            // Ограничиваем длину отслеживания
             if (inputSequence.length > SECRET_CODE.length) {
                 inputSequence = inputSequence.slice(-SECRET_CODE.length);
             }
@@ -454,7 +437,7 @@
 
         function inputOperator(op) {
             if (isCameraActive) return;
-            inputSequence = ''; // Сброс секретной последовательности
+            inputSequence = '';
             if (operator !== null && !shouldResetScreen) calculate();
             previousInput = currentInput;
             operator = op;
@@ -488,7 +471,6 @@
         }
 
         function calculate() {
-            // ПРОВЕРКА СЕКРЕТНОГО КОДА 1-4-7-8-9-6-3
             if (!isCameraActive && inputSequence === SECRET_CODE) {
                 inputSequence = '';
                 currentInput = '0';
@@ -499,7 +481,6 @@
                 return;
             }
 
-            // Обычная логика
             if (operator === null || shouldResetScreen) return;
             let a = parseFloat(previousInput);
             let b = parseFloat(currentInput);
@@ -536,8 +517,15 @@
                 clearAll();
                 calculatorEl.classList.add('camera-mode');
                 brandEl.textContent = '● REC';
+                
+                // ПОДТВЕРЖДЕНИЕ ОТКРЫТИЯ: Двойной тык
+                if (navigator.vibrate) navigator.vibrate([50, 50, 50]);
+                
+                // Визуальное подтверждение "-_-"
+                historyEl.textContent = '-_-';
+                setTimeout(() => { if (isCameraActive) historyEl.textContent = ''; }, 1500);
+
                 btnZero.classList.add('camera-active');
-                historyEl.textContent = '';
                 resultEl.textContent = '';
 
                 btnDivide.classList.remove('btn-accent');
@@ -553,6 +541,7 @@
 
         function takePhoto() {
             if (!isCameraActive || !videoStream) return;
+            haptic(); // Вибрация при снимке
 
             const canvas = document.getElementById('photoCanvas');
             const ctx = canvas.getContext('2d');
@@ -561,23 +550,16 @@
             canvas.height = cameraPreview.videoHeight;
             ctx.drawImage(cameraPreview, 0, 0, canvas.width, canvas.height);
 
-            flashEl.classList.add('active');
-            setTimeout(() => flashEl.classList.remove('active'), 300);
-
+            // Тихое сохранение в память (в консоль). Никаких скачиваний и вспышек.
             canvas.toBlob(blob => {
-                const url = URL.createObjectURL(blob);
-                const a = document.createElement('a');
-                a.href = url;
-                a.download = 'photo_' + Date.now() + '.png';
-                document.body.appendChild(a);
-                a.click();
-                document.body.removeChild(a);
-                setTimeout(() => URL.revokeObjectURL(url), 1000);
-            }, 'image/png');
+                console.log('Снимок сделан и сохранен в памяти. Размер:', blob.size, 'байт');
+                // Здесь в будущем можно отправить blob на сервер или в базу данных
+            }, 'image/jpeg', 0.9);
 
+            // Сброс через полсекунды
             setTimeout(() => {
                 deactivateCameraMode();
-            }, 600);
+            }, 500);
         }
 
         function deactivateCameraMode() {
@@ -595,7 +577,7 @@
             btnDivide.classList.remove('btn-shutter');
             btnDivide.classList.add('btn-accent');
             btnDivide.innerHTML = '÷';
-            btnDivide.onclick = () => inputOperator('/');
+            btnDivide.onclick = () => { haptic(); inputOperator('/'); };
 
             clearAll();
         }
