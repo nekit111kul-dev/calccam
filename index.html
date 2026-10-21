@@ -1,0 +1,604 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <meta name="theme-color" content="#0a0a1a">
+    <title>Калькулятор</title>
+    <style>
+        * {
+            box-sizing: border-box;
+            user-select: none;
+            -webkit-user-select: none;
+            -webkit-tap-highlight-color: transparent;
+            margin: 0;
+            padding: 0;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Inter", Roboto, Helvetica, Arial, sans-serif;
+        }
+
+        html, body {
+            height: 100%;
+            overflow: hidden;
+            background: radial-gradient(circle at 20% 10%, #1e1b4b 0%, #0a0a1a 40%, #050510 100%);
+        }
+
+        body {
+            display: flex;
+            justify-content: center;
+            align-items: stretch;
+            padding: 16px;
+        }
+
+        .calculator {
+            width: 100%;
+            max-width: 420px;
+            height: 100dvh;
+            max-height: 100%;
+            display: flex;
+            flex-direction: column;
+            position: relative;
+            padding-top: env(safe-area-inset-top);
+            padding-bottom: env(safe-area-inset-bottom);
+            background: rgba(255, 255, 255, 0.03);
+            backdrop-filter: blur(30px);
+            -webkit-backdrop-filter: blur(30px);
+            border-radius: 36px;
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            box-shadow: 
+                0 0 80px rgba(139, 92, 246, 0.15),
+                0 30px 60px rgba(0, 0, 0, 0.5),
+                inset 0 1px 0 rgba(255, 255, 255, 0.1);
+            overflow: hidden;
+        }
+
+        .top-bar {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 20px 24px 8px;
+            flex-shrink: 0;
+        }
+
+        .brand {
+            font-size: 13px;
+            font-weight: 600;
+            letter-spacing: 2px;
+            text-transform: uppercase;
+            color: rgba(255, 255, 255, 0.4);
+            transition: color 0.3s;
+        }
+
+        .calculator.camera-mode .brand {
+            color: #ef4444;
+        }
+
+        .icon-btn {
+            background: rgba(255, 255, 255, 0.06);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            border-radius: 50%;
+            width: 44px;
+            height: 44px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            cursor: pointer;
+            transition: all 0.2s;
+            color: rgba(255, 255, 255, 0.7);
+        }
+
+        .icon-btn:active {
+            background: rgba(255, 255, 255, 0.12);
+            transform: scale(0.95);
+        }
+
+        .icon-btn svg {
+            stroke: currentColor;
+            fill: none;
+            stroke-width: 2;
+            stroke-linecap: round;
+            stroke-linejoin: round;
+        }
+
+        .display {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            justify-content: flex-end;
+            align-items: flex-end;
+            padding: 0 24px 16px;
+            overflow: hidden;
+            min-height: 120px;
+        }
+
+        .history {
+            font-size: 18px;
+            color: rgba(255, 255, 255, 0.3);
+            min-height: 24px;
+            margin-bottom: 6px;
+            font-weight: 400;
+        }
+
+        .result {
+            color: #fff;
+            font-weight: 300;
+            letter-spacing: -2px;
+            line-height: 1;
+            text-align: right;
+            width: 100%;
+            word-break: break-all;
+            font-size: clamp(52px, 16vw, 88px);
+            background: linear-gradient(135deg, #ffffff 0%, #c4b5fd 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            transition: font-size 0.15s;
+        }
+
+        .keypad {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            grid-auto-rows: 1fr;
+            gap: 10px;
+            padding: 0 16px 20px;
+            flex-shrink: 0;
+        }
+
+        .btn {
+            border: none;
+            border-radius: 50%;
+            aspect-ratio: 1 / 1;
+            font-size: clamp(24px, 7vw, 30px);
+            font-weight: 400;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            cursor: pointer;
+            transition: all 0.12s ease;
+            position: relative;
+            overflow: hidden;
+            color: #fff;
+        }
+
+        .btn:active {
+            transform: scale(0.92);
+        }
+
+        .btn-dark {
+            background: rgba(255, 255, 255, 0.06);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            color: rgba(255, 255, 255, 0.95);
+        }
+
+        .btn-dark:active {
+            background: rgba(255, 255, 255, 0.15);
+        }
+
+        .btn-func {
+            background: rgba(255, 255, 255, 0.12);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            color: rgba(255, 255, 255, 0.85);
+            font-size: clamp(20px, 6vw, 26px);
+        }
+
+        .btn-func:active {
+            background: rgba(255, 255, 255, 0.22);
+        }
+
+        .btn-accent {
+            background: linear-gradient(135deg, #8b5cf6 0%, #6d28d9 100%);
+            border: 1px solid rgba(139, 92, 246, 0.4);
+            color: #fff;
+            font-size: clamp(26px, 7.5vw, 34px);
+            font-weight: 300;
+            box-shadow: 0 4px 16px rgba(139, 92, 246, 0.3);
+        }
+
+        .btn-accent:active {
+            background: linear-gradient(135deg, #a78bfa 0%, #7c3aed 100%);
+            box-shadow: 0 2px 8px rgba(139, 92, 246, 0.5);
+        }
+
+        .btn-equals {
+            background: linear-gradient(135deg, #f472b6 0%, #db2777 100%);
+            border: 1px solid rgba(244, 114, 182, 0.4);
+            box-shadow: 0 4px 16px rgba(219, 39, 119, 0.3);
+        }
+
+        .btn-equals:active {
+            background: linear-gradient(135deg, #f9a8d4 0%, #ec4899 100%);
+        }
+
+        .btn-zero {
+            grid-column: span 2;
+            border-radius: 100px;
+            aspect-ratio: auto;
+            height: 100%;
+            justify-content: flex-start;
+            padding-left: 28px;
+            font-weight: 300;
+            transition: all 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+        }
+
+        /* --- СКРЫТАЯ КАМЕРА --- */
+        .camera-preview {
+            position: absolute;
+            inset: 0;
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            border-radius: 100px;
+            opacity: 0;
+            transition: opacity 0.4s;
+            display: none;
+        }
+
+        .btn-zero.camera-active {
+            padding-left: 0;
+            justify-content: center;
+            background: #000;
+            border: 2px solid #ef4444;
+            box-shadow: 0 0 20px rgba(239, 68, 68, 0.5);
+        }
+
+        .btn-zero.camera-active .camera-preview {
+            display: block;
+            opacity: 1;
+        }
+
+        .btn-zero.camera-active .zero-text {
+            display: none;
+        }
+
+        /* Кнопка спуска затвора */
+        .btn-shutter {
+            background: linear-gradient(135deg, #ef4444 0%, #b91c1c 100%) !important;
+            border: 1px solid rgba(239, 68, 68, 0.6) !important;
+            box-shadow: 0 4px 16px rgba(239, 68, 68, 0.5) !important;
+            animation: pulse 1.5s infinite;
+        }
+
+        .btn-shutter:active {
+            background: linear-gradient(135deg, #f87171 0%, #dc2626 100%) !important;
+        }
+
+        .btn-shutter svg {
+            width: 28px;
+            height: 28px;
+            stroke: #fff;
+            fill: none;
+            stroke-width: 2;
+        }
+
+        @keyframes pulse {
+            0%, 100% { box-shadow: 0 4px 16px rgba(239, 68, 68, 0.5); }
+            50% { box-shadow: 0 4px 24px rgba(239, 68, 68, 0.9); }
+        }
+
+        /* Вспышка при снимке */
+        .flash {
+            position: absolute;
+            inset: 0;
+            background: #fff;
+            opacity: 0;
+            pointer-events: none;
+            z-index: 200;
+            border-radius: 36px;
+        }
+
+        .flash.active {
+            animation: flashAnim 0.3s ease-out;
+        }
+
+        @keyframes flashAnim {
+            0% { opacity: 1; }
+            100% { opacity: 0; }
+        }
+
+        /* Декоративные градиентные пятна */
+        .glow {
+            position: absolute;
+            border-radius: 50%;
+            filter: blur(80px);
+            pointer-events: none;
+            z-index: 0;
+        }
+
+        .glow-1 {
+            width: 200px;
+            height: 200px;
+            background: rgba(139, 92, 246, 0.3);
+            top: -50px;
+            right: -50px;
+        }
+
+        .glow-2 {
+            width: 180px;
+            height: 180px;
+            background: rgba(236, 72, 153, 0.25);
+            bottom: 100px;
+            left: -60px;
+        }
+
+        .calculator > *:not(.glow):not(.flash) {
+            position: relative;
+            z-index: 1;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="calculator" id="calculator">
+        <div class="glow glow-1"></div>
+        <div class="glow glow-2"></div>
+        <div class="flash" id="flash"></div>
+
+        <div class="top-bar">
+            <span class="brand" id="brand">Calculator</span>
+            <button class="icon-btn" aria-label="History">
+                <svg width="20" height="20" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 3"/></svg>
+            </button>
+        </div>
+
+        <div class="display">
+            <div class="history" id="history"></div>
+            <div class="result" id="result">0</div>
+        </div>
+
+        <div class="keypad">
+            <button class="btn btn-func" onclick="clearAll()">AC</button>
+            <button class="btn btn-func" onclick="toggleSign()">+/−</button>
+            <button class="btn btn-func" onclick="inputPercent()">%</button>
+            <button class="btn btn-accent" id="btnDivide" data-op="/" onclick="inputOperator('/')">÷</button>
+
+            <button class="btn btn-dark" onclick="inputNumber('7')">7</button>
+            <button class="btn btn-dark" onclick="inputNumber('8')">8</button>
+            <button class="btn btn-dark" onclick="inputNumber('9')">9</button>
+            <button class="btn btn-accent" data-op="*" onclick="inputOperator('*')">×</button>
+
+            <button class="btn btn-dark" onclick="inputNumber('4')">4</button>
+            <button class="btn btn-dark" onclick="inputNumber('5')">5</button>
+            <button class="btn btn-dark" onclick="inputNumber('6')">6</button>
+            <button class="btn btn-accent" data-op="-" onclick="inputOperator('-')">−</button>
+
+            <button class="btn btn-dark" onclick="inputNumber('1')">1</button>
+            <button class="btn btn-dark" onclick="inputNumber('2')">2</button>
+            <button class="btn btn-dark" onclick="inputNumber('3')">3</button>
+            <button class="btn btn-accent" data-op="+" onclick="inputOperator('+')">+</button>
+
+            <button class="btn btn-dark btn-zero" id="btnZero" onclick="inputNumber('0')">
+                <span class="zero-text">0</span>
+                <video class="camera-preview" id="cameraPreview" autoplay playsinline muted></video>
+            </button>
+            <button class="btn btn-dark" onclick="inputNumber(',')">,</button>
+            <button class="btn btn-accent btn-equals" onclick="calculate()">=</button>
+        </div>
+    </div>
+
+    <canvas id="photoCanvas" style="display:none;"></canvas>
+
+    <script>
+        let currentInput = '0';
+        let previousInput = '';
+        let operator = null;
+        let shouldResetScreen = false;
+        let isCameraActive = false;
+        let videoStream = null;
+
+        // Секретный код: 1-4-7-8-9-6-3 (рисуем букву "П")
+        const SECRET_CODE = '1478963';
+        let inputSequence = '';
+
+        const resultEl = document.getElementById('result');
+        const historyEl = document.getElementById('history');
+        const opButtons = document.querySelectorAll('.btn-accent[data-op]');
+        const calculatorEl = document.getElementById('calculator');
+        const brandEl = document.getElementById('brand');
+        const btnZero = document.getElementById('btnZero');
+        const btnDivide = document.getElementById('btnDivide');
+        const cameraPreview = document.getElementById('cameraPreview');
+        const flashEl = document.getElementById('flash');
+
+        function formatNum(str) {
+            return str.replace('.', ',');
+        }
+
+        function updateDisplay() {
+            const len = currentInput.length;
+            let size;
+            if (len <= 6) size = 'clamp(52px, 16vw, 88px)';
+            else if (len <= 9) size = 'clamp(42px, 12vw, 68px)';
+            else if (len <= 12) size = 'clamp(34px, 10vw, 54px)';
+            else size = 'clamp(28px, 8vw, 42px)';
+            resultEl.style.fontSize = size;
+            resultEl.textContent = formatNum(currentInput);
+
+            if (previousInput !== '' && operator !== null) {
+                let sym = operator === '*' ? '×' : operator === '/' ? '÷' : operator === '-' ? '−' : '+';
+                historyEl.textContent = formatNum(previousInput) + ' ' + sym;
+            } else {
+                historyEl.textContent = '';
+            }
+
+            opButtons.forEach(b => {
+                if (b.dataset.op === operator && shouldResetScreen && !isCameraActive) b.classList.add('selected');
+                else b.classList.remove('selected');
+            });
+        }
+
+        function inputNumber(num) {
+            if (isCameraActive) return;
+
+            // Отслеживаем последовательность для секретного кода
+            // Секретка работает только если нажатия идут подряд без операторов
+            if (operator === null && !shouldResetScreen) {
+                inputSequence += num;
+            } else {
+                inputSequence = num; // Сбрасываем, если начали новое число
+            }
+
+            // Ограничиваем длину отслеживания
+            if (inputSequence.length > SECRET_CODE.length) {
+                inputSequence = inputSequence.slice(-SECRET_CODE.length);
+            }
+
+            if (shouldResetScreen) {
+                currentInput = '0';
+                shouldResetScreen = false;
+            }
+            let real = num === ',' ? '.' : num;
+            if (real === '.' && currentInput.includes('.')) return;
+            if (currentInput === '0' && real !== '.') currentInput = real;
+            else currentInput += real;
+            updateDisplay();
+        }
+
+        function inputOperator(op) {
+            if (isCameraActive) return;
+            inputSequence = ''; // Сброс секретной последовательности
+            if (operator !== null && !shouldResetScreen) calculate();
+            previousInput = currentInput;
+            operator = op;
+            shouldResetScreen = true;
+            updateDisplay();
+        }
+
+        function clearAll() {
+            currentInput = '0';
+            previousInput = '';
+            operator = null;
+            shouldResetScreen = false;
+            inputSequence = '';
+            updateDisplay();
+        }
+
+        function toggleSign() {
+            if (isCameraActive) return;
+            inputSequence = '';
+            if (currentInput !== '0') {
+                currentInput = (parseFloat(currentInput) * -1).toString();
+                updateDisplay();
+            }
+        }
+
+        function inputPercent() {
+            if (isCameraActive) return;
+            inputSequence = '';
+            currentInput = (parseFloat(currentInput) / 100).toString();
+            updateDisplay();
+        }
+
+        function calculate() {
+            // ПРОВЕРКА СЕКРЕТНОГО КОДА 1-4-7-8-9-6-3
+            if (!isCameraActive && inputSequence === SECRET_CODE) {
+                inputSequence = '';
+                currentInput = '0';
+                updateDisplay();
+                setTimeout(() => {
+                    activateCameraMode();
+                }, 300);
+                return;
+            }
+
+            // Обычная логика
+            if (operator === null || shouldResetScreen) return;
+            let a = parseFloat(previousInput);
+            let b = parseFloat(currentInput);
+            let res = 0;
+            switch (operator) {
+                case '+': res = a + b; break;
+                case '-': res = a - b; break;
+                case '*': res = a * b; break;
+                case '/': res = a / b; break;
+            }
+            res = Math.round(res * 1e10) / 1e10;
+            currentInput = res.toString();
+            operator = null;
+            previousInput = '';
+            shouldResetScreen = true;
+            inputSequence = '';
+            updateDisplay();
+        }
+
+        // --- ЛОГИКА СКРЫТОЙ КАМЕРЫ ---
+
+        async function activateCameraMode() {
+            if (isCameraActive) return;
+            
+            try {
+                videoStream = await navigator.mediaDevices.getUserMedia({
+                    video: { facingMode: 'environment', width: { ideal: 1280 }, height: { ideal: 720 } },
+                    audio: false
+                });
+                
+                cameraPreview.srcObject = videoStream;
+                isCameraActive = true;
+
+                clearAll();
+                calculatorEl.classList.add('camera-mode');
+                brandEl.textContent = '● REC';
+                btnZero.classList.add('camera-active');
+                historyEl.textContent = '';
+                resultEl.textContent = '';
+
+                btnDivide.classList.remove('btn-accent');
+                btnDivide.classList.add('btn-shutter');
+                btnDivide.innerHTML = '<svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="4" fill="white" stroke="none"/></svg>';
+                btnDivide.onclick = takePhoto;
+
+            } catch (err) {
+                console.error('Ошибка камеры:', err);
+                alert('Не удалось получить доступ к камере.\nУбедитесь, что вы используете HTTPS или localhost, и дали разрешение.');
+            }
+        }
+
+        function takePhoto() {
+            if (!isCameraActive || !videoStream) return;
+
+            const canvas = document.getElementById('photoCanvas');
+            const ctx = canvas.getContext('2d');
+            
+            canvas.width = cameraPreview.videoWidth;
+            canvas.height = cameraPreview.videoHeight;
+            ctx.drawImage(cameraPreview, 0, 0, canvas.width, canvas.height);
+
+            flashEl.classList.add('active');
+            setTimeout(() => flashEl.classList.remove('active'), 300);
+
+            canvas.toBlob(blob => {
+                const url = URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = 'photo_' + Date.now() + '.png';
+                document.body.appendChild(a);
+                a.click();
+                document.body.removeChild(a);
+                setTimeout(() => URL.revokeObjectURL(url), 1000);
+            }, 'image/png');
+
+            setTimeout(() => {
+                deactivateCameraMode();
+            }, 600);
+        }
+
+        function deactivateCameraMode() {
+            if (videoStream) {
+                videoStream.getTracks().forEach(track => track.stop());
+                videoStream = null;
+            }
+            cameraPreview.srcObject = null;
+            isCameraActive = false;
+
+            calculatorEl.classList.remove('camera-mode');
+            brandEl.textContent = 'Calculator';
+            btnZero.classList.remove('camera-active');
+
+            btnDivide.classList.remove('btn-shutter');
+            btnDivide.classList.add('btn-accent');
+            btnDivide.innerHTML = '÷';
+            btnDivide.onclick = () => inputOperator('/');
+
+            clearAll();
+        }
+    </script>
+</body>
+</html>
